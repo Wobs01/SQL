@@ -71,19 +71,29 @@ function add-toSQLtable {
 
 function add-toSQLtablebulk {
     [Cmdletbinding()] 
-    param([parameter(Mandatory = $false)]$connection,
-        [parameter(Mandatory = $false)]$tablename,
-        [parameter(Mandatory = $false)]$SO
+    param([parameter(Mandatory = $true)]
+        $connection,
+        [parameter(Mandatory = $true)]
+        [string]$tablename,
+        [parameter(Mandatory = $true)]
+        $SO,
+        [parameter(Mandatory = $false)]
+        [switch]$useasync
               
     ) 
     try {
         $bulk = new-object ("System.Data.SqlClient.SqlBulkCopy") $connection
         $bulk.DestinationTableName = $tablename
         $datatable = add-datatable -inputobject $SO
-        $bulk.WriteToServer($datatable) #| Out-Null
+        if ($useasync) {
+            $bulk.WriteToServerAsync($datatable)
+        }
+        else {
+            $bulk.WriteToServer($datatable) #| Out-Null
+        }
     }
     catch {
-        $Error[0] | Out-Host
+        throw $Error[0] 
     }
     
 }
@@ -194,6 +204,7 @@ function open-SQLdatabase {
 
     try {
         $connection = New-Object System.Data.SqlClient.SqlConnection
+        #needs work
         $connection.ConnectionString = "Server = $serverstring ; Database = $databasename; Integrated Security = True;" 
         
         $connection.Open()
