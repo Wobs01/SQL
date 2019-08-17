@@ -70,6 +70,28 @@ function add-toSQLtable {
 }
 
 function add-toSQLtablebulk {
+    <#   
+    .SYNOPSIS   
+    Function to add to a SQL table in bulk
+        
+    .DESCRIPTION 
+    Function to add to a SQL table in bulk, either synchronous or asynchronous
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . add-toSQLtablebulk -Connection $connection -tablename "Testtable" -object "$SO" -useasync
+    
+
+    #>
     [Cmdletbinding()] 
     param([parameter(Mandatory = $true)]
         $connection,
@@ -93,43 +115,68 @@ function add-toSQLtablebulk {
         }
     }
     catch {
-        throw $Error[0] 
+        throw "Unable to write data to $tablename`n`n$($Error[0])" 
     }
     
 }
 
 function remove-SQLtable {
+    <#   
+    .SYNOPSIS   
+    Function to add to drop a SQL table
+        
+    .DESCRIPTION 
+    Function to add to drop a SQL table
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . remove-SQLtable -Connection $connection -tablename "Testtable" 
+    
+
+    #>
+    
     [Cmdletbinding()] 
-    param([parameter(Mandatory = $false)]$connection,
-        [parameter(Mandatory = $false)]$tablename
+    param([parameter(Mandatory = $true)
+        ]$connection,
+        [parameter(Mandatory = $true)]
+        [string]$tablename
               
               
     ) 
     try {
         $command = $connection.CreateCommand()        
         $command.CommandText = "drop table $tablename"
-                  
-      
         [void]$command.ExecuteNonQuery()
             
     }
         
     catch {
-        $Error[0] | Out-Host
+        throw "Unable to remove $tablename`n`n$($Error[0])" 
     }
 
 }
 
 function new-SQLtable {
     [Cmdletbinding()] 
-    param([parameter(Mandatory = $false)]$connection,
-        [parameter(Mandatory = $false)]$tablename,
-        [parameter(Mandatory = $false)]$SO
+    param([parameter(Mandatory = $true)]
+        $connection,
+        [parameter(Mandatory = $true)]
+        [string]$tablename,
+        [parameter(Mandatory = $true)]
+        $SO
               
     ) 
     try {
-        $command = $connection.CreateCommand()
-        
+        $command = $connection.CreateCommand()        
         $command.CommandText = "Select * from $tablename" 
         $command.Parameters.Clear()
         $reader = $command.ExecuteReader()           
@@ -156,6 +203,7 @@ function new-SQLtable {
                 ($columntype -eq "INT32") {
                     $SQLcolumntype = "INTEGER"
                 }
+                #more datatypes could be added
                 default {
                     $SQLcolumntype = "VARCHAR(MAX)" 
                 }
@@ -172,7 +220,7 @@ function new-SQLtable {
             [void]$command.ExecuteNonQuery()
         }
         catch {
-            $Error[0] | out-host
+            throw "Unable to create $tablename`n`n$($Error[0].exception)" 
         }
     }
     
