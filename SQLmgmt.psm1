@@ -1,3 +1,75 @@
+function open-SQLdatabase {
+    <#   
+   .SYNOPSIS   
+   Function to connect to a SQL database
+       
+   .DESCRIPTION 
+   Opens a connection to a sql database. Returns the open connection which can be used to follow up on other functions
+
+   .NOTES	
+       Author: Robin Verhoeven
+       Requestor: -
+       Created: -
+       
+       
+
+   .LINK
+       https://github.com/Wobs01/SQL
+
+   .EXAMPLE   
+   . open-SQLdatabase -servername "foo@bar.corp" -instancename "vikkedinger" -databasename "testdatabase" -usewindowsauthentication
+   
+
+   #>
+   
+   
+   [Cmdletbinding(DefaultParameterSetName = "WindowsAuth")] 
+   param([parameter(Mandatory = $false)]
+       [string]$servername,
+       [parameter(Mandatory = $false)]
+       [string]$instancename,
+       [parameter(Mandatory = $false)]
+       [string]$databasename,
+       [parameter(Mandatory = $false,ParameterSetName='WindowsAuth')]
+       [switch]$usewindowsauthentication,
+       [parameter (Mandatory = $false,ParameterSetName='SQLAuth')]
+       [string]$username
+             
+   ) 
+   if ($instancename) {
+       $serverstring = "$servername\$instancename"
+   }
+   else {
+       $serverstring = $servername
+   }
+
+   try {
+       $connection = New-Object System.Data.SqlClient.SqlConnection
+       [string]$connectionstring = "Server = $serverstring; Database = $databasename;"
+       switch ($PSCmdlet.ParameterSetName) {
+           "WindowsAuth" { 
+               $connectionstring += " Integrated Security = True;"
+           }
+           "SQLAuth" {
+               $connectionstring += " Integrated Security = False;"
+           }
+       }
+               
+       $connection.ConnectionString = $connectionstring
+       
+       $connection.Open()
+       "Successfully connected to $serverstring"  | Out-Host
+   }
+   catch {
+       $Error[0] | Out-Host
+       $connection = $null
+       "failed to connect to $serverstring"  | Out-Host
+   }
+
+   return $connection
+}
+
+
 
 function add-toSQLtable {
     <#   
@@ -166,6 +238,32 @@ function remove-SQLtable {
 }
 
 function new-SQLtable {
+     <#   
+    .SYNOPSIS   
+    Function to create a new SQL table
+        
+    .DESCRIPTION 
+    Function to create a new SQL table and create the table and data types based on the system object values
+    Includes test if table already exists
+    Values default to VARCHAR(MAX)
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . new-SQLtable -Connection $connection -tablename "Testtable" -SO $SO
+    
+
+    #>
+    
+    
     [Cmdletbinding()] 
     param([parameter(Mandatory = $true)]
         $connection,
@@ -177,14 +275,14 @@ function new-SQLtable {
     ) 
     try {
         $command = $connection.CreateCommand()        
-        $command.CommandText = "Select * from $tablename" 
+        $command.CommandText = "Select top 1 from $tablename" 
         $command.Parameters.Clear()
         $reader = $command.ExecuteReader()           
         $reader.Close()
     }
     catch [System.Management.Automation.MethodInvocationException] {
         
-            
+        #select different type of data types and columns    
         $columnnames = ($SO| select-object -First 1).psobject.properties.name 
         $columntypes = ($SO| select-object -First 1).psobject.properties.TypeNameOfValue
         $i = 0
@@ -226,46 +324,7 @@ function new-SQLtable {
     
 }
 
-function open-SQLdatabase {
-    [Cmdletbinding(DefaultParameterSetName = "WindowsAuth")] 
-    param([parameter(Mandatory = $false)]
-        [string]$servername,
-        [parameter(Mandatory = $false)]
-        [string]$instancename,
-        [parameter(Mandatory = $false)]
-        [string]$databasename,
-        [parameter(Mandatory = $false,ParameterSetName='WindowsAuth')]
-        [switch]$usewindowsauthentication,
-        [parameter (Mandatory = $false,ParameterSetName='SQLAuth')]
-        [string]$username,
-        [parameter (Mandatory = $false,ParameterSetName='SQLAuth')]
-        [string]$password
 
-              
-    ) 
-    if ($instancename) {
-        $serverstring = "$servername\$instancename"
-    }
-    else {
-        $serverstring = $servername
-    }
-
-    try {
-        $connection = New-Object System.Data.SqlClient.SqlConnection
-        #needs work
-        $connection.ConnectionString = "Server = $serverstring ; Database = $databasename; Integrated Security = True;" 
-        
-        $connection.Open()
-        "Successfully connected to $serverstring"  | Out-Host
-    }
-    catch {
-        $Error[0] | Out-Host
-        $connection = $null
-        "failed to connect to $serverstring"  | Out-Host
-    }
-
-    return $connection
-}
 
 function close-SQLdatabase {
     [Cmdletbinding()] 
