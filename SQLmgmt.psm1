@@ -154,7 +154,7 @@ function new-SQLtable {
            [void]$command.ExecuteNonQuery()
        }
        catch {
-           write-host -ForegroundColor Red "Unable to create $tablename`n`n$($Error[0])" 
+           Throw "Unable to create $tablename`n`n$($Error[0].Exception)" 
        }
    }
    
@@ -455,4 +455,4 @@ function add-datatable ($inputobject) {
     return , $datatable
 }
 
-Export-ModuleMember -Function open-SQLdata, new-SQLtable, add-toSQLtable, add-toSQLtablebulk, remove-SQLtable, close-SQLdatabase, get-SQLtablecontent, new-SQLcustomquery -Alias *
+Export-ModuleMember -Function open-SQLdatabase, new-SQLtable, add-toSQLtable, add-toSQLtablebulk, remove-SQLtable, close-SQLdatabase, get-SQLtablecontent, new-SQLcustomquery -Alias *
