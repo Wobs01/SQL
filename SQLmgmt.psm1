@@ -24,16 +24,18 @@ function open-SQLdatabase {
    
    
    [Cmdletbinding(DefaultParameterSetName = "WindowsAuth")] 
-   param([parameter(Mandatory = $false)]
+   param([parameter(Mandatory = $true)]
        [string]$servername,
        [parameter(Mandatory = $false)]
        [string]$instancename,
-       [parameter(Mandatory = $false)]
+       [parameter(Mandatory = $true)]
        [string]$databasename,
        [parameter(Mandatory = $false,ParameterSetName='WindowsAuth')]
        [switch]$usewindowsauthentication,
        [parameter (Mandatory = $false,ParameterSetName='SQLAuth')]
-       [string]$username
+       [string]$username,
+       [parameter (Mandatory = $false,ParameterSetName='SQLAuth')]
+       [string]$password
              
    ) 
    if ($instancename) {
@@ -52,6 +54,8 @@ function open-SQLdatabase {
            }
            "SQLAuth" {
                $connectionstring += " Integrated Security = False;"
+               $connectionstring += "User ID = $username;"
+               $connectionstring += "Password = $password;"
            }
        }
                
@@ -69,7 +73,92 @@ function open-SQLdatabase {
    return $connection
 }
 
+function new-SQLtable {
+    <#   
+   .SYNOPSIS   
+   Function to create a new SQL table
+       
+   .DESCRIPTION 
+   Function to create a new SQL table and create the table and data types based on the system object values
+   Includes test if table already exists
+   Values default to VARCHAR(MAX)
 
+   .NOTES	
+       Author: Robin Verhoeven
+       Requestor: -
+       Created: -
+       
+       
+
+   .LINK
+       https://github.com/Wobs01/SQL
+
+   .EXAMPLE   
+   . new-SQLtable -Connection $connection -tablename "Testtable" -SO $SO
+   
+
+   #>
+   
+   
+   [Cmdletbinding()] 
+   param([parameter(Mandatory = $true)]
+       $connection,
+       [parameter(Mandatory = $true)]
+       [string]$tablename,
+       [parameter(Mandatory = $true)]
+       $SO
+             
+   ) 
+   try {
+       $command = $connection.CreateCommand()        
+       $command.CommandText = "Select top 1 from $tablename" 
+       $command.Parameters.Clear()
+       $reader = $command.ExecuteReader()           
+       $reader.Close()
+   }
+   catch [System.Management.Automation.MethodInvocationException] {
+       
+       #select different type of data types and columns    
+       $columnnames = ($SO| select-object -First 1).psobject.properties.name 
+       $columntypes = ($SO| select-object -First 1).psobject.properties.TypeNameOfValue
+       $i = 0
+       [string]$SQLcreate = "CREATE TABLE " + $tablename + " ("
+       foreach ($columnname in $columnnames) {
+               
+           $columntype = $columntypes[$i].split("\.")[-1]
+               
+           switch ($true) {
+               ($columntype -eq "Datetime") {
+                   $SQLcolumntype = "DATETIME" 
+               }
+               ($columntype -eq "GUID") {
+                   $SQLcolumntype = "UNIQUEIDENTIFIER"
+               }
+               ($columntype -eq "INT32") {
+                   $SQLcolumntype = "INTEGER"
+               }
+               #more datatypes could be added
+               default {
+                   $SQLcolumntype = "VARCHAR(MAX)" 
+               }
+           }
+           $SQLcreate = $SQLcreate + "[" + $columnname + "] " + $SQLcolumntype + ","
+           $I++
+                      
+       }  
+       $SQLcreate = ($SQLcreate -replace ".$") + ");"   
+       try {
+           $command = $connection.CreateCommand()
+               
+           $command.CommandText = $SQLcreate
+           [void]$command.ExecuteNonQuery()
+       }
+       catch {
+           throw "Unable to create $tablename`n`n$($Error[0].exception)" 
+       }
+   }
+   
+}
 
 function add-toSQLtable {
     <#   
@@ -236,95 +325,6 @@ function remove-SQLtable {
     }
 
 }
-
-function new-SQLtable {
-     <#   
-    .SYNOPSIS   
-    Function to create a new SQL table
-        
-    .DESCRIPTION 
-    Function to create a new SQL table and create the table and data types based on the system object values
-    Includes test if table already exists
-    Values default to VARCHAR(MAX)
-
-    .NOTES	
-        Author: Robin Verhoeven
-        Requestor: -
-        Created: -
-        
-        
-
-    .LINK
-        https://github.com/Wobs01/SQL
-
-    .EXAMPLE   
-    . new-SQLtable -Connection $connection -tablename "Testtable" -SO $SO
-    
-
-    #>
-    
-    
-    [Cmdletbinding()] 
-    param([parameter(Mandatory = $true)]
-        $connection,
-        [parameter(Mandatory = $true)]
-        [string]$tablename,
-        [parameter(Mandatory = $true)]
-        $SO
-              
-    ) 
-    try {
-        $command = $connection.CreateCommand()        
-        $command.CommandText = "Select top 1 from $tablename" 
-        $command.Parameters.Clear()
-        $reader = $command.ExecuteReader()           
-        $reader.Close()
-    }
-    catch [System.Management.Automation.MethodInvocationException] {
-        
-        #select different type of data types and columns    
-        $columnnames = ($SO| select-object -First 1).psobject.properties.name 
-        $columntypes = ($SO| select-object -First 1).psobject.properties.TypeNameOfValue
-        $i = 0
-        [string]$SQLcreate = "CREATE TABLE " + $tablename + " ("
-        foreach ($columnname in $columnnames) {
-                
-            $columntype = $columntypes[$i].split("\.")[-1]
-                
-            switch ($true) {
-                ($columntype -eq "Datetime") {
-                    $SQLcolumntype = "DATETIME" 
-                }
-                ($columntype -eq "GUID") {
-                    $SQLcolumntype = "UNIQUEIDENTIFIER"
-                }
-                ($columntype -eq "INT32") {
-                    $SQLcolumntype = "INTEGER"
-                }
-                #more datatypes could be added
-                default {
-                    $SQLcolumntype = "VARCHAR(MAX)" 
-                }
-            }
-            $SQLcreate = $SQLcreate + "[" + $columnname + "] " + $SQLcolumntype + ","
-            $I++
-                       
-        }  
-        $SQLcreate = ($SQLcreate -replace ".$") + ");"   
-        try {
-            $command = $connection.CreateCommand()
-                
-            $command.CommandText = $SQLcreate
-            [void]$command.ExecuteNonQuery()
-        }
-        catch {
-            throw "Unable to create $tablename`n`n$($Error[0].exception)" 
-        }
-    }
-    
-}
-
-
 
 function close-SQLdatabase {
     [Cmdletbinding()] 
