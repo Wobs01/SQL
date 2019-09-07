@@ -111,7 +111,7 @@ function new-SQLtable {
    ) 
    try {
        $command = $connection.CreateCommand()        
-       $command.CommandText = "Select top 1 from $tablename" 
+       $command.CommandText = "Select top 1 * from $tablename" 
        $command.Parameters.Clear()
        $reader = $command.ExecuteReader()           
        $reader.Close()
@@ -154,7 +154,7 @@ function new-SQLtable {
            [void]$command.ExecuteNonQuery()
        }
        catch {
-           throw "Unable to create $tablename`n`n$($Error[0].exception)" 
+           write-host -ForegroundColor Red "Unable to create $tablename`n`n$($Error[0])" 
        }
    }
    
@@ -179,7 +179,7 @@ function add-toSQLtable {
         https://github.com/Wobs01/SQL
 
     .EXAMPLE   
-    . add-toSQLtable -Connection $connection -tablename "Testtable" -object "$SO"
+    . add-toSQLtable -Connection $connection -tablename "Testtable" -SO $SO
     
 
     #>
@@ -190,12 +190,12 @@ function add-toSQLtable {
         [parameter(Mandatory = $true)]
         $tablename,
         [parameter(Mandatory = $true)]
-        $object
+        $SO
               
     ) 
 
    
-    $columnnames = ($object| select-object -First 1).psobject.properties.name 
+    $columnnames = ($SO| select-object -First 1).psobject.properties.name 
 
     [string]$columnstring = "([" + ($columnnames -join "],[") + "])"
     [string]$parametercountstring = "(" + ("@" + ($columnnames -join ",@")) + ")"
@@ -203,19 +203,16 @@ function add-toSQLtable {
     
     $command = $connection.CreateCommand()
     
-    foreach ($Item in $object) {
+    foreach ($Item in $SO) {
         
         try {
             $command.Parameters.Clear()
             $command.CommandText = $SQLinsert
             
             foreach ($columnname in $columnnames) {
-                if ([string]::IsNullOrEmpty($Item.$columnname)) {
-                    $Item.$columnname = "NULL"
-                }
-                [void]$command.Parameters.Add("@$columnname", $Item.$columnname)
                 
-            
+                [void]$command.Parameters.Add("@$columnname", [string]$Item.$columnname)
+                
             }
                     
             [void]$command.ExecuteNonQuery() 
@@ -223,7 +220,7 @@ function add-toSQLtable {
         }
         
         catch {
-            throw $Error[0]
+            $Error[0].Exception
         }
     }
    
@@ -249,7 +246,7 @@ function add-toSQLtablebulk {
         https://github.com/Wobs01/SQL
 
     .EXAMPLE   
-    . add-toSQLtablebulk -Connection $connection -tablename "Testtable" -object "$SO" -useasync
+    . add-toSQLtablebulk -Connection $connection -tablename "Testtable" -SO $SO -useasync
     
 
     #>
@@ -327,8 +324,33 @@ function remove-SQLtable {
 }
 
 function close-SQLdatabase {
+    <#   
+    .SYNOPSIS   
+    Function to close the connection to a SQL database
+        
+    .DESCRIPTION 
+    Function to close the connection to a SQL database, requires an open connection and a valid connection object
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . close-SQLdatabase -Connection $connection" 
+    
+
+    #>
+    
+    
     [Cmdletbinding()] 
-    param([parameter(Mandatory = $false)]$connection            
+    param([parameter(Mandatory = $true)]
+    $connection            
               
     ) 
     try {
@@ -336,16 +358,41 @@ function close-SQLdatabase {
         $connection.Dispose()
         "Closed connection " + $connection.DataSource | Out-Host
     }
-    catch {
-        $Error[0] | write-log -type Error
-        "Failed to close connection to " + $connection.DataSource | write-log -type error
+    catch {        
+        throw "Failed to close connection to $($connection.DataSource)`n`n$($Error[0])"  
     }
 }
 
-function get-SQLtableinfo {
+function get-SQLtablecontent {
+     <#   
+    .SYNOPSIS   
+    Function to get all content from a SQLtable
+        
+    .DESCRIPTION 
+    Function to get all content from a SQLtable, outputs a datatable
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . get-SQLtablecontent -Connection $connection -tablename "test2" 
+    
+
+    #>
+    
+    
     [Cmdletbinding()] 
-    param([parameter(Mandatory = $false)]$connection,
-        [parameter(Mandatory = $false)]$tablename           
+    param([parameter(Mandatory = $true)]
+        $connection,
+        [parameter(Mandatory = $true)]
+        [string]$tablename           
               
     ) 
     try {
@@ -359,12 +406,40 @@ function get-SQLtableinfo {
         $reader.Close()
     }
     catch {
-        $Error[0]
+        throw "Failed to get content from $tablename`n`n$($Error[0])"  
     }
     
     return $result
 
 }
+
+
+function new-SQLcustomquery {
+    [Cmdletbinding()] 
+    param([parameter(Mandatory = $true)]
+        $connection,
+        [parameter(Mandatory = $true)]
+        [string]$querystring           
+              
+    ) 
+    try {
+        $command = $connection.createcommand()      
+        
+        $command.CommandText = $querystring 
+        $command.Parameters.Clear()
+        $reader = $command.ExecuteReader()
+        $result = New-Object System.Data.DataTable
+        $result.Load($reader)       
+        $reader.Close()
+    }
+    catch {
+        throw "Failed to get content from $tablename`n`n$($Error[0])"  
+    }
+    
+    return $result
+
+}
+
 
 function add-datatable ($inputobject) {
     $datatable = new-object System.data.datatable
