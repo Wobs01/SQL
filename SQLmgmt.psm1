@@ -455,4 +455,4 @@ function add-datatable ($inputobject) {
     return , $datatable
 }
 
-Export-ModuleMember -Function * -Alias *
+Export-ModuleMember -Function open-SQLdata, new-SQLtable, add-toSQLtable, add-toSQLtablebulk, remove-SQLtable, close-SQLdatabase, get-SQLtablecontent, new-SQLcustomquery -Alias *
