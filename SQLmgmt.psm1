@@ -220,7 +220,7 @@ function add-toSQLtable {
         }
         
         catch {
-            $Error[0].Exception
+            throw "Error in insterting data into $($tablename)`n`n$($Error[0])"  
         }
     }
    
@@ -323,46 +323,6 @@ function remove-SQLtable {
 
 }
 
-function close-SQLdatabase {
-    <#   
-    .SYNOPSIS   
-    Function to close the connection to a SQL database
-        
-    .DESCRIPTION 
-    Function to close the connection to a SQL database, requires an open connection and a valid connection object
-
-    .NOTES	
-        Author: Robin Verhoeven
-        Requestor: -
-        Created: -
-        
-        
-
-    .LINK
-        https://github.com/Wobs01/SQL
-
-    .EXAMPLE   
-    . close-SQLdatabase -Connection $connection" 
-    
-
-    #>
-    
-    
-    [Cmdletbinding()] 
-    param([parameter(Mandatory = $true)]
-    $connection            
-              
-    ) 
-    try {
-        $connection.Close()
-        $connection.Dispose()
-        "Closed connection " + $connection.DataSource | Out-Host
-    }
-    catch {        
-        throw "Failed to close connection to $($connection.DataSource)`n`n$($Error[0])"  
-    }
-}
-
 function get-SQLtablecontent {
      <#   
     .SYNOPSIS   
@@ -413,8 +373,31 @@ function get-SQLtablecontent {
 
 }
 
-
 function new-SQLcustomquery {
+     <#   
+    .SYNOPSIS   
+    Function to execute custom reader query
+        
+    .DESCRIPTION 
+    Function to execute custom reader query
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . new-SQLcustomquery -Connection $connection -querystring "SELECT * FROM TABLE test WHERE name='test'" 
+    
+
+    #>
+    
+    
     [Cmdletbinding()] 
     param([parameter(Mandatory = $true)]
         $connection,
@@ -440,6 +423,45 @@ function new-SQLcustomquery {
 
 }
 
+function close-SQLdatabase {
+    <#   
+    .SYNOPSIS   
+    Function to close the connection to a SQL database
+        
+    .DESCRIPTION 
+    Function to close the connection to a SQL database, requires an open connection and a valid connection object
+
+    .NOTES	
+        Author: Robin Verhoeven
+        Requestor: -
+        Created: -
+        
+        
+
+    .LINK
+        https://github.com/Wobs01/SQL
+
+    .EXAMPLE   
+    . close-SQLdatabase -Connection $connection" 
+    
+
+    #>
+    
+    
+    [Cmdletbinding()] 
+    param([parameter(Mandatory = $true)]
+    $connection            
+              
+    ) 
+    try {
+        $connection.Close()
+        $connection.Dispose()
+        "Closed connection " + $connection.DataSource | Out-Host
+    }
+    catch {        
+        throw "Failed to close connection to $($connection.DataSource)`n`n$($Error[0])"  
+    }
+}
 
 function add-datatable ($inputobject) {
     $datatable = new-object System.data.datatable

@@ -34,4 +34,43 @@ new-SQLtable
 catch specific exception
 select psobjecttype
 columntype
-Create query
+Create query in commandtext
+Executenonquery
+
+new-SQLtable -Connection $connection -tablename "connectiontable" -SO $connection
+
+$dirinfo = get-childitem
+
+new-SQLtable -Connection $connection -tablename "dirinfo" -SO $dirinfo
+
+add-toSQLtable
+extract columns
+create query string
+add paramater values
+
+add-toSQLtable -Connection $connection -tablename "connectiontable" -SO $connection
+debug
+
+add-toSQLtablebulk
+sqlbulkcopy object
+converttodatatable
+writetoserver
+writetoserverasync
+
+add-toSQLtablebulk -Connection $connection -tablename "dirinfo" -SO $dirinfo
+add-toSQLtablebulk -Connection $connection -tablename "dirinfo" -SO $dirinfo -useasync
+ORDER BY
+
+get-SQLtablecontent
+createcommand
+commandtext
+databable 
+reader
+get-SQLtablecontent -Connection $connection -tablename "dirinfo"
+
+new-SQLcustomquery -Connection $connection -querystring "SELECT * FROM TABLE test WHERE PSCHILDNAME='README.md'"
+
+Close-SQLdatabase
+$connection.close and dispose
+
+Use cases
