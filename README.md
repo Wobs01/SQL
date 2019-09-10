@@ -1,6 +1,8 @@
 git
 https://github.com/Wobs01/SQL
 
+integration with vscode
+commit
 
 module 
 
