@@ -250,21 +250,27 @@ function add-toSQLtablebulk {
     
 
     #>
-    [Cmdletbinding()] 
+    [Cmdletbinding(DefaultParameterSetName = "SO")] 
     param([parameter(Mandatory = $true)]
         $connection,
         [parameter(Mandatory = $true)]
         [string]$tablename,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false,ParameterSetName = "SO")]
         $SO,
+        [parameter(Mandatory = $false,ParameterSetName = "datatable")]
+        $datatable,
         [parameter(Mandatory = $false)]
         [switch]$useasync
               
     ) 
+
     try {
         $bulk = new-object ("System.Data.SqlClient.SqlBulkCopy") $connection
         $bulk.DestinationTableName = $tablename
-        $datatable = add-datatable -inputobject $SO
+        if ($PSCmdlet.ParameterSetName -eq "SO") {           
+                $datatable = add-datatable -inputobject $SO
+        }        
+        
         if ($useasync) {
             $bulk.WriteToServerAsync($datatable) | out-null
         }
@@ -273,7 +279,7 @@ function add-toSQLtablebulk {
         }
     }
     catch {
-        throw "Unable to write data to $tablename`n`n$($Error[1][0])" 
+        throw "Unable to write data to $tablename`n`n$($Error[1])" 
     }
     
 }
@@ -318,7 +324,7 @@ function remove-SQLtable {
     }
         
     catch {
-        throw "Unable to remove $tablename`n`n$($Error[1])" 
+        throw "Unable to remove $tablename`n`n$($Error[1].Exception)" 
     }
 
 }
@@ -419,7 +425,7 @@ function new-SQLcustomquery {
         throw "Failed to get content from $tablename`n`n$($Error[1])"  
     }
     
-    return $result
+    return , $result
 
 }
 
