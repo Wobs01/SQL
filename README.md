@@ -59,6 +59,13 @@ writetoserverasync
 
 add-toSQLtablebulk -Connection $connection -tablename "dirinfo" -SO $dirinfo
 add-toSQLtablebulk -Connection $connection -tablename "dirinfo" -SO $dirinfo -useasync
+
+
+
+import-intosql -SQLtable "dirinfo" -sourcefile .\testcsv.csv -username robin -password 
+
+import-intosql -SQLtable "dirinfo2" -sourcefile .\testcsv.csv -username robin -password 
+
 ORDER BY
 
 get-SQLtablecontent
@@ -68,7 +75,21 @@ databable
 reader
 get-SQLtablecontent -Connection $connection -tablename "dirinfo"
 
+
+permformance
+adjust script into bulk and bulkasync
+import-intosql -SQLtable "dirinfo3" -sourcefile .\testcsv.csv -username robin -password 
+
+$datatable = get-SQLtablecontent -Connection $connection -tablename "dirinfo2"
+
+measure-command {add-toSQLtable -Connection $connection -tablename "dirinfo3" -SO $connection}
+measure-command {add-toSQLtablebulk -Connection $connection -tablename "dirinfo3" -SO $connection}
+measure-command {add-toSQLtablebulk -useasync -Connection $connection -tablename "dirinfo3" -SO $connection}
+
 new-SQLcustomquery -Connection $connection -querystring "SELECT * FROM TABLE test WHERE PSCHILDNAME='README.md'"
+
+remove-SQLtable -Connection $connection -tablename "dirinfo2" 
+remove-SQLtable -Connection $connection -tablename "dirinfo3" 
 
 Close-SQLdatabase
 $connection.close and dispose

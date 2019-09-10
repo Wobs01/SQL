@@ -1,9 +1,11 @@
 ﻿[Cmdletbinding(DefaultParameterSetName = 'file')] 
 param(
     [parameter(Mandatory = $true, ParameterSetName = 'File')]$sourcefile,
-    [parameter(Mandatory = $false)]$SQLtable = "SQLauditinfo",
-    [parameter(Mandatory = $false)]$SQLdatabase = "Auditlog",
-    [parameter(Mandatory = $false)]$SQLinstancename  = "SQLmgmt_prd"
+    [parameter(Mandatory = $false)]$SQLtable = "dirinfo",
+    [parameter(Mandatory = $false)]$SQLdatabase = "powershelldemo",
+    [parameter(Mandatory = $false)]$SQLservername = "vikkedinger.database.windows.net",
+    [parameter(Mandatory = $false)]$username,
+    [parameter(Mandatory = $false)]$password
     
 )
 
@@ -24,7 +26,7 @@ catch {
 
 try {
     Import-Module $SQLmodule -ErrorAction Stop
-    $connection = open-SQLdatabase -servername $env:COMPUTERNAME -instancename $SQLinstancename -databasename $SQLdatabase
+    $connection = open-SQLdatabase -servername $SQLservername -databasename $SQLdatabase -username $username -password $password
     }
 catch {
     $connection = $null
@@ -35,9 +37,14 @@ foreach ($line in $csv) {
     Write-Progress -Activity "processing $i2 of $($csv.count)" -PercentComplete (($i2/$csv.Count) * 100)
     if ($i2 -le 1) {
         new-SQLtable -tablename $SQLtable -connection $connection -SO $line        
-    }
-    $line.timestamp = [datetime]$line.timestamp
+    }    
     $i2++
-    add-toSQLtable -connection $connection -tablename $SQLtable -SO $line
+    try {
+        add-toSQLtablebulk -connection $connection -tablename $SQLtable -SO $line
+        }
+    catch {
+        $Error[0]
+        break
+    }
 }
 close-SQLdatabase -connection $connection

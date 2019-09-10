@@ -154,7 +154,7 @@ function new-SQLtable {
            [void]$command.ExecuteNonQuery()
        }
        catch {
-           Throw "Unable to create $tablename`n`n$($Error[0].Exception)" 
+           Throw "Unable to create $tablename`n`n$($Error[1].Exception)" 
        }
    }
    
@@ -220,7 +220,7 @@ function add-toSQLtable {
         }
         
         catch {
-            throw "Error in insterting data into $($tablename)`n`n$($Error[0])"  
+            throw "Error in insterting data into $($tablename)`n`n$($Error[1])"  
         }
     }
    
@@ -266,14 +266,14 @@ function add-toSQLtablebulk {
         $bulk.DestinationTableName = $tablename
         $datatable = add-datatable -inputobject $SO
         if ($useasync) {
-            $bulk.WriteToServerAsync($datatable)
+            $bulk.WriteToServerAsync($datatable) | out-null
         }
         else {
             $bulk.WriteToServer($datatable) #| Out-Null
         }
     }
     catch {
-        throw "Unable to write data to $tablename`n`n$($Error[0])" 
+        throw "Unable to write data to $tablename`n`n$($Error[1][0])" 
     }
     
 }
@@ -318,7 +318,7 @@ function remove-SQLtable {
     }
         
     catch {
-        throw "Unable to remove $tablename`n`n$($Error[0])" 
+        throw "Unable to remove $tablename`n`n$($Error[1])" 
     }
 
 }
@@ -366,7 +366,7 @@ function get-SQLtablecontent {
         $reader.Close()
     }
     catch {
-        throw "Failed to get content from $tablename`n`n$($Error[0])"  
+        throw "Failed to get content from $tablename`n`n$($Error[1])"  
     }
     
     return $result
@@ -416,7 +416,7 @@ function new-SQLcustomquery {
         $reader.Close()
     }
     catch {
-        throw "Failed to get content from $tablename`n`n$($Error[0])"  
+        throw "Failed to get content from $tablename`n`n$($Error[1])"  
     }
     
     return $result
@@ -459,7 +459,7 @@ function close-SQLdatabase {
         "Closed connection " + $connection.DataSource | Out-Host
     }
     catch {        
-        throw "Failed to close connection to $($connection.DataSource)`n`n$($Error[0])"  
+        throw "Failed to close connection to $($connection.DataSource)`n`n$($Error[1])"  
     }
 }
 
